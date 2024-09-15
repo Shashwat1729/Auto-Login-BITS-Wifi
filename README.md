@@ -13,7 +13,7 @@ This Chrome Extension automatically logs into the BITS college portal using mult
 1. **Download the Extension**:
    - Clone or download the repository:
      ```bash
-     git clone https://github.com/your-username/bits-auto-login-extension](https://github.com/Shashwat1729/Auto-Login-BITS-Wifi.git
+     git clone https://github.com/Shashwat1729/Auto-Login-BITS-Wifi.git
      ```
 
 2. **Load the Extension in Chrome**:
