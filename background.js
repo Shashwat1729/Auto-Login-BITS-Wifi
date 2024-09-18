@@ -1,9 +1,5 @@
 let loginTabId = null;
 
-function getRandomPassword(passwords) {
-  return passwords[Math.floor(Math.random() * passwords.length)];
-}
-
 // Check internet connectivity by pinging an IP (like a DNS server or college portal)
 function checkInternetConnectivity() {
   fetch("http://1.1.1.1", { mode: 'no-cors' }) // Use 'no-cors' to avoid CORS issues
@@ -27,8 +23,16 @@ function attemptLogin() {
       return;
     }
 
-    // Choose a random password for login
-    const randomPassword = getRandomPassword(passwords);
+    // Ensure the lengths of usernames and passwords are the same
+    if (usernames.length !== passwords.length) {
+      console.error('Usernames and passwords count mismatch');
+      return;
+    }
+
+    // Pick a random index for both username and password (ensuring 1-1 relation)
+    const randomIndex = Math.floor(Math.random() * usernames.length);
+    const randomUsername = usernames[randomIndex];
+    const randomPassword = passwords[randomIndex];
 
     // Open the login page in a new tab
     chrome.tabs.create(
@@ -38,9 +42,6 @@ function attemptLogin() {
 
         chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
           if (tabId === loginTabId && info.status === "complete") {
-            // Randomly select a username for each login attempt
-            const randomUsername = usernames[Math.floor(Math.random() * usernames.length)];
-
             // Fill in the login form and submit
             chrome.scripting.executeScript({
               target: { tabId: loginTabId },
