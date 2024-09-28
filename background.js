@@ -1,14 +1,21 @@
 let loginTabId = null;
 
-// Check internet connectivity by pinging an IP (like a DNS server or college portal)
+// Function to check internet connectivity
 function checkInternetConnectivity() {
-  fetch("http://1.1.1.1", { mode: 'no-cors' }) // Use 'no-cors' to avoid CORS issues
-    .then((response) => {
+  fetch("http://1.1.1.1", { mode: 'no-cors' }) // Pinging an IP address
+    .then(() => {
       console.log('Internet is connected');
     })
-    .catch((error) => {
-      console.log('No internet connection, attempting to log in...');
-      attemptLogin();
+    .catch(() => {
+      // Only attempt login if the specific page is reachable (e.g., http://172.16.0.30:8090/httpclient.html)
+      fetch("http://172.16.0.30:8090/httpclient.html", { mode: 'no-cors' })
+        .then(() => {
+          console.log('Connected to specific network, attempting login...');
+          attemptLogin();
+        })
+        .catch(() => {
+          console.log('Cannot access login page, skipping login attempt.');
+        });
     });
 }
 
@@ -23,63 +30,54 @@ function attemptLogin() {
       return;
     }
 
-    // Ensure the lengths of usernames and passwords are the same
     if (usernames.length !== passwords.length) {
       console.error('Usernames and passwords count mismatch');
       return;
     }
 
-    // Pick a random index for both username and password (ensuring 1-1 relation)
     const randomIndex = Math.floor(Math.random() * usernames.length);
     const randomUsername = usernames[randomIndex];
     const randomPassword = passwords[randomIndex];
 
-    // Open the login page in a new tab
-    chrome.tabs.create(
-      { url: "http://172.16.0.30:8090/httpclient.html" },
-      (loginTab) => {
-        loginTabId = loginTab.id;
+    chrome.tabs.create({ url: "http://172.16.0.30:8090/httpclient.html" }, (loginTab) => {
+      loginTabId = loginTab.id;
 
-        chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-          if (tabId === loginTabId && info.status === "complete") {
-            // Fill in the login form and submit
-            chrome.scripting.executeScript({
-              target: { tabId: loginTabId },
-              func: (username, password) => {
-                const usernameField = document.querySelector("#username");
-                const passwordField = document.querySelector("#password");
-                if (usernameField && passwordField) {
-                  usernameField.value = username;
-                  passwordField.value = password;
+      chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
+        if (tabId === loginTabId && info.status === "complete") {
+          chrome.scripting.executeScript({
+            target: { tabId: loginTabId },
+            func: (username, password) => {
+              const usernameField = document.querySelector("#username");
+              const passwordField = document.querySelector("#password");
+              if (usernameField && passwordField) {
+                usernameField.value = username;
+                passwordField.value = password;
 
-                  // Create and dispatch an Enter key event on the password field
-                  const event = new KeyboardEvent("keydown", {
-                    key: "Enter",
-                    code: "Enter",
-                    keyCode: 13,
-                    which: 13,
-                    bubbles: true,
-                    cancelable: true,
-                  });
-                  passwordField.dispatchEvent(event);
-                } else {
-                  console.error('Login form fields not found');
-                }
-              },
-              args: [randomUsername, randomPassword]
-            }).catch(err => console.error("Error executing login script:", err));
+                const event = new KeyboardEvent("keydown", {
+                  key: "Enter",
+                  code: "Enter",
+                  keyCode: 13,
+                  which: 13,
+                  bubbles: true,
+                  cancelable: true,
+                });
+                passwordField.dispatchEvent(event);
+              } else {
+                console.error('Login form fields not found');
+              }
+            },
+            args: [randomUsername, randomPassword]
+          }).catch(err => console.error("Error executing login script:", err));
 
-            chrome.tabs.onUpdated.removeListener(listener);
-          }
-        });
-      }
-    );
+          chrome.tabs.onUpdated.removeListener(listener);
+        }
+      });
+    });
   });
 }
 
 // Periodically check for internet connectivity (every 5 minutes)
 chrome.alarms.create('checkInternet', { periodInMinutes: 5 });
-
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'checkInternet') {
     checkInternetConnectivity();
@@ -88,3 +86,14 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 // Initial check when extension is loaded
 checkInternetConnectivity();
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "checkInternetConnectivity") {
+    checkInternetConnectivity();
+  }
+  
+  if (request.action === "toggleExtension") {
+    const isEnabled = request.enabled;
+    console.log(`Extension is now ${isEnabled ? 'enabled' : 'disabled'}`);
+  }
+});
