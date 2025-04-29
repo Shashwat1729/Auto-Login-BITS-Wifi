@@ -14,7 +14,7 @@ This Chrome extension automates the login process for the college network portal
 1. **Download the Extension**:
    - Clone or download the repository:
      ```bash
-     git clone https://github.com/shaitanu/bitswifi-extension.git
+     git clone https://github.com/Shashwat1729/Auto-Login-BITS-Wifi.git
      ```
 
 2. **Load the Extension in Chrome**:
