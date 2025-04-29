@@ -1,22 +1,26 @@
 {
   "manifest_version": 3,
-  "name": "Auto Login Extension",
-  "version": "1.2",
-  "description": "Automatically logs in to specified portals.",
+  "name": "BITS WiFi Auto Login",
+  "version": "2.0",
+  "description": "Automatically logs in to BITS WiFi network with improved reliability and user experience",
   "icons": {
     "16": "icons/icon128.png",
+    "32": "icons/icon128.png",
     "48": "icons/icon128.png",
     "128": "icons/icon128.png"
   },
   "permissions": [
-    "tabs", 
-    "scripting", 
-    "storage", 
-    "alarms"
+    "tabs",
+    "scripting",
+    "storage",
+    "alarms",
+    "notifications",
+    "networkStatus"
   ],
   "host_permissions": [
-    "http://172.16.0.30:8090/",
-    "http://172.16.100.117/"
+    "http://172.16.0.30:8090/*",
+    "http://172.16.100.117/*",
+    "http://1.1.1.1/"
   ],
   "background": {
     "service_worker": "background.js"
@@ -24,8 +28,19 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
+      "16": "icons/icon128.png",
+      "32": "icons/icon128.png",
+      "48": "icons/icon128.png",
       "128": "icons/icon128.png"
     }
   },
-  "options_page": "options.html"
+  "options_page": "options.html",
+  "author": "BITS Wifi Team",
+  "homepage_url": "https://github.com/Shashwat1729/bitswifi-extension",
+  "web_accessible_resources": [{
+    "resources": [
+      "icons/*.png"
+    ],
+    "matches": ["<all_urls>"]
+  }]
 }
