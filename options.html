@@ -3,119 +3,250 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Login Settings</title>
+    <title>BITS WiFi Auto Login Settings</title>
     <style>
-      * {
-        box-sizing: border-box;
+      :root {
+        --primary-color: #2196F3;
+        --success-color: #4CAF50;
+        --error-color: #f44336;
+        --text-primary: #333;
+        --text-secondary: #666;
+        --background-primary: #ffffff;
+        --background-secondary: #f5f7fa;
+        --border-color: #e0e0e0;
       }
 
       body {
-        width: 100%;
-        max-width: 400px;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        margin: 0;
+        padding: 40px;
+        background-color: var(--background-secondary);
+        color: var(--text-primary);
+        line-height: 1.5;
+      }
+
+      .container {
+        max-width: 600px;
         margin: 0 auto;
-        padding: 20px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f0f2f5;
-        color: #333;
-        transition: all 0.3s ease;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+
+      .header img {
+        width: 48px;
+        height: 48px;
       }
 
       h1 {
         font-size: 24px;
-        text-align: center;
-        margin-bottom: 20px;
-        color: #4CAF50;
-        border-bottom: 2px solid #4CAF50;
-        padding-bottom: 10px;
+        margin: 0;
+        color: var(--text-primary);
       }
 
-      .form-container {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      .card {
+        background-color: var(--background-primary);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+      }
+
+      .form-group {
+        margin-bottom: 24px;
       }
 
       label {
         display: block;
-        font-weight: 600;
+        font-weight: 500;
         margin-bottom: 8px;
-        color: #555;
+        color: var(--text-primary);
       }
 
-      textarea, input {
+      .input-description {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+      }
+
+      textarea {
         width: 100%;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
+        padding: 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
         font-size: 14px;
-        margin-bottom: 15px;
-        transition: border-color 0.3s ease;
-        background-color: #fff;
-        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
+        line-height: 1.5;
+        resize: vertical;
+        min-height: 100px;
+        font-family: inherit;
       }
 
-      textarea:focus, input:focus {
-        border-color: #4CAF50;
+      textarea:focus {
         outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+      }
+
+      .button-group {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
       }
 
       button {
-        width: 100%;
-        padding: 12px 0;
-        background-color: #4CAF50;
-        color: white;
+        padding: 12px 24px;
         border: none;
-        border-radius: 5px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-      }
-
-      button:hover {
-        background-color: #45a049;
-      }
-
-      .status {
+        border-radius: 8px;
         font-size: 14px;
-        color: #888;
-        text-align: center;
-        margin-top: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
       }
 
-      .loader {
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid #4CAF50;
-        border-radius: 50%;
-        width: 24px;
-        height: 24px;
-        animation: spin 1s linear infinite;
+      .primary-button {
+        background-color: var(--primary-color);
+        color: white;
+      }
+
+      .primary-button:hover {
+        background-color: #1976D2;
+      }
+
+      .secondary-button {
+        background-color: var(--background-secondary);
+        color: var(--text-primary);
+      }
+
+      .secondary-button:hover {
+        background-color: #e0e0e0;
+      }
+
+      .status-message {
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 14px;
         display: none;
-        margin: 10px auto;
       }
 
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+      .status-message.show {
+        display: block;
+      }
+
+      .status-message.success {
+        background-color: #E8F5E9;
+        color: var(--success-color);
+      }
+
+      .status-message.error {
+        background-color: #FFEBEE;
+        color: var(--error-color);
+      }
+
+      .credentials-list {
+        margin-top: 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .credential-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .credential-item:last-child {
+        border-bottom: none;
+      }
+
+      .credential-info {
+        display: flex;
+        gap: 16px;
+      }
+
+      .credential-username {
+        font-weight: 500;
+      }
+
+      .credential-password {
+        color: var(--text-secondary);
+      }
+
+      .delete-button {
+        background: none;
+        border: none;
+        color: var(--error-color);
+        cursor: pointer;
+        padding: 4px 8px;
+        font-size: 13px;
+      }
+
+      .delete-button:hover {
+        text-decoration: underline;
       }
     </style>
   </head>
   <body>
-    <h1>Login Settings</h1>
-    <div class="form-container">
-      <label for="usernames">Usernames (comma-separated):</label>
-      <textarea id="usernames" rows="3" placeholder="Enter multiple usernames"></textarea>
+    <div class="container">
+      <div class="header">
+        <img src="icons/icon128.png" alt="Logo">
+        <h1>BITS WiFi Auto Login Settings</h1>
+      </div>
 
-      <label for="passwords">Passwords (comma-separated):</label>
-      <textarea id="passwords" rows="3" placeholder="Enter multiple passwords"></textarea>
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Credentials Management</h2>
+        </div>
 
-      <!-- Loader for saving feedback -->
-      <div class="loader" id="loader"></div>
+        <div class="form-group">
+          <label for="usernames">Usernames</label>
+          <div class="input-description">Enter multiple usernames, one per line</div>
+          <textarea id="usernames" placeholder="Enter usernames"></textarea>
+        </div>
 
-      <button id="save">Save</button>
+        <div class="form-group">
+          <label for="passwords">Passwords</label>
+          <div class="input-description">Enter corresponding passwords, one per line</div>
+          <textarea id="passwords" placeholder="Enter passwords"></textarea>
+        </div>
 
-      <p id="status" class="status"></p>
+        <div class="button-group">
+          <button class="secondary-button" id="resetButton">Reset</button>
+          <button class="primary-button" id="saveButton">Save Changes</button>
+        </div>
+
+        <div class="status-message" id="statusMessage"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Saved Credentials</h2>
+        </div>
+        <div id="credentialsList" class="credentials-list">
+          <!-- Credentials will be populated here -->
+        </div>
+      </div>
     </div>
 
     <script src="options.js"></script>

@@ -1,31 +1,176 @@
-// Get references to the toggle switch and buttons
+// DOM references
 const toggleSwitch = document.getElementById("toggleExtension");
+const statusText = document.getElementById("statusText");
 const statusMessage = document.getElementById("statusMessage");
+const checkBtn = document.getElementById("checkInternet");
+const loginSpinner = document.getElementById("loginSpinner");
+const connectionDot = document.getElementById("connectionDot");
+const connectionStatus = document.getElementById("connectionStatus");
+const lastLogin = document.getElementById("lastLogin");
+const historyList = document.getElementById("historyList");
+const lastUsername = document.getElementById("lastUsername");
+const credentialSelect = document.getElementById("credentialSelect");
+const clearActivityBtn = document.getElementById("clearActivityBtn");
+
+let allUsernames = [];
+let allPasswords = [];
 
 // Load and set the extension's enabled state from storage
-chrome.storage.local.get(["extensionEnabled"], (result) => {
-  toggleSwitch.checked = result.extensionEnabled !== false; // Default is enabled if not set
-});
+if (toggleSwitch && statusText) {
+  chrome.storage.local.get(["extensionEnabled"], (result) => {
+    const enabled = result.extensionEnabled !== false; // Default is enabled
+    toggleSwitch.checked = enabled;
+    statusText.textContent = enabled ? "Enabled" : "Disabled";
+  });
+}
 
 // Toggle the extension on or off
-toggleSwitch.addEventListener("change", () => {
-  const isEnabled = toggleSwitch.checked;
-  
-  chrome.storage.local.set({ extensionEnabled: isEnabled }, () => {
-    statusMessage.textContent = isEnabled ? "Extension enabled" : "Extension disabled";
-    setTimeout(() => statusMessage.textContent = '', 2000); // Clear message after 2 seconds
+function showStatusMessage(msg, type = "success") {
+  if (!statusMessage) return;
+  statusMessage.textContent = msg;
+  statusMessage.className = `status-message show ${type}`;
+  setTimeout(() => {
+    statusMessage.className = "status-message";
+    statusMessage.textContent = "";
+  }, 2000);
+}
+
+if (toggleSwitch) {
+  toggleSwitch.addEventListener("change", () => {
+    const isEnabled = toggleSwitch.checked;
+    chrome.storage.local.set({ extensionEnabled: isEnabled }, () => {
+      if (statusText) statusText.textContent = isEnabled ? "Enabled" : "Disabled";
+      showStatusMessage(isEnabled ? "Extension enabled" : "Extension disabled", "success");
+    });
+    chrome.runtime.sendMessage({ action: "toggleExtension", enabled: isEnabled });
   });
+}
 
-  // Optionally send a message to background to perform some action
-  chrome.runtime.sendMessage({ action: "toggleExtension", enabled: isEnabled });
-});
+// Populate credentialSelect dropdown
+function populateCredentialSelect() {
+  if (!credentialSelect) return;
+  credentialSelect.innerHTML = "";
+  // Add 'Random' option
+  const randomOption = document.createElement("option");
+  randomOption.value = "random";
+  randomOption.textContent = "Random";
+  credentialSelect.appendChild(randomOption);
+  allUsernames.forEach((username, idx) => {
+    const option = document.createElement("option");
+    option.value = idx;
+    option.textContent = username;
+    credentialSelect.appendChild(option);
+  });
+}
 
-// Trigger internet check and login when the button is clicked
-document.getElementById("checkInternet").addEventListener("click", () => {
-  chrome.runtime.sendMessage({ action: "checkInternetConnectivity" });
-});
+// Load credentials for dropdown
+function loadCredentialsForDropdown() {
+  chrome.storage.local.get(["usernames", "passwords"], (result) => {
+    allUsernames = Array.isArray(result.usernames) ? result.usernames : [];
+    allPasswords = Array.isArray(result.passwords) ? result.passwords : [];
+    populateCredentialSelect();
+  });
+}
 
-// Open the settings page when the settings button is clicked
-document.getElementById("openSettings").addEventListener("click", () => {
-  chrome.runtime.openOptionsPage();
-});
+// Check & Login button
+if (checkBtn && loginSpinner) {
+  checkBtn.addEventListener("click", () => {
+    loginSpinner.style.display = "inline-block";
+    checkBtn.setAttribute("disabled", "disabled");
+    // Use selected credential
+    let selectedIdx = credentialSelect ? credentialSelect.value : "random";
+    let selectedUsername, selectedPassword;
+    if (selectedIdx !== "random" && allUsernames.length > 0) {
+      const idx = parseInt(selectedIdx);
+      if (!isNaN(idx) && idx >= 0 && idx < allUsernames.length) {
+        selectedUsername = allUsernames[idx];
+        selectedPassword = allPasswords[idx];
+      }
+    }
+    chrome.runtime.sendMessage({ action: "checkInternetConnectivity", username: selectedUsername, password: selectedPassword }, (response) => {
+      loginSpinner.style.display = "none";
+      checkBtn.removeAttribute("disabled");
+      if (response && response.success) {
+        showStatusMessage("Login successful!", "success");
+      } else if (response && response.error) {
+        showStatusMessage(response.error, "error");
+      } else {
+        showStatusMessage("Login attempt finished.", "success");
+      }
+    });
+  });
+}
+
+const openSettingsBtn = document.getElementById("openSettings");
+if (openSettingsBtn) {
+  openSettingsBtn.addEventListener("click", () => {
+    chrome.runtime.openOptionsPage();
+  });
+}
+
+// Clear Activity button
+if (clearActivityBtn) {
+  clearActivityBtn.addEventListener("click", () => {
+    chrome.storage.local.set({ history: [] }, () => {
+      updateHistory([]);
+      showStatusMessage("Activity cleared.", "success");
+    });
+  });
+}
+
+// Connection status dot and text
+function updateConnectionStatus(status) {
+  if (!connectionDot || !connectionStatus) return;
+  if (status === "connected") {
+    connectionDot.classList.add("connected");
+    connectionDot.classList.remove("disconnected");
+    connectionStatus.textContent = "Connected to BITS Network";
+  } else if (status === "disconnected") {
+    connectionDot.classList.add("disconnected");
+    connectionDot.classList.remove("connected");
+    connectionStatus.textContent = "Not connected";
+  } else {
+    connectionDot.classList.remove("connected", "disconnected");
+    connectionStatus.textContent = "Checking connection...";
+  }
+}
+
+// Only update lastLogin and lastUsername
+function updateStats(stats = {}) {
+  if (lastLogin) lastLogin.textContent = stats.lastLogin || "Never";
+  if (lastUsername) lastUsername.textContent = stats.lastUsername || "-";
+}
+
+function updateHistory(history = []) {
+  if (!historyList) return;
+  historyList.innerHTML = "";
+  if (!history.length) {
+    historyList.innerHTML = '<div class="history-item"><span>No recent activity</span></div>';
+    return;
+  }
+  history.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "history-item";
+    div.innerHTML = `<span>${item.action}</span><span class="history-time">${item.time}</span>`;
+    historyList.appendChild(div);
+  });
+}
+
+// Initial load: get stats and connection
+function loadPopupData() {
+  updateConnectionStatus();
+  updateStats();
+  updateHistory();
+  chrome.runtime.sendMessage({ action: "getPopupData" }, (response) => {
+    if (response) {
+      updateConnectionStatus(response.connectionStatus);
+      updateStats(response.stats);
+      updateHistory(response.history);
+    } else {
+      showStatusMessage("Failed to load popup data.", "error");
+    }
+  });
+  loadCredentialsForDropdown();
+}
+
+loadPopupData();
