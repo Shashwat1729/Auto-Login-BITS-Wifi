@@ -302,8 +302,10 @@
       </div>
 
       <div class="form-group" style="margin-bottom: 16px;">
-        <label for="credentialSelect" style="font-size:14px;color:var(--text-secondary);margin-bottom:4px;">Login as</label>
-        <select id="credentialSelect" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border-color);font-size:14px;"></select>
+        <label for="usernameSelect" style="font-size:14px;color:var(--text-secondary);margin-bottom:4px;">Login as</label>
+        <select id="usernameSelect" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--border-color);font-size:14px;">
+          <option value="random">Random</option>
+        </select>
       </div>
 
       <div class="button-group">
@@ -331,13 +333,11 @@
       </div>
 
       <div class="connection-history">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <h3 style="margin:0;">Recent Activity</h3>
-          <button id="clearActivityBtn" style="font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:var(--background-secondary);color:var(--error-color);cursor:pointer;">Clear Activity</button>
-        </div>
+        <h3>Recent Activity</h3>
         <div id="historyList">
           <!-- History items will be populated here -->
         </div>
+        <button class="secondary-button" id="clearActivityBtn" style="margin-top:12px;width:100%;">Clear Activity</button>
       </div>
 
       <div class="status-message" id="statusMessage"></div>

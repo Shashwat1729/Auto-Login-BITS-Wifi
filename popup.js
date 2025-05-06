@@ -9,11 +9,8 @@ const connectionStatus = document.getElementById("connectionStatus");
 const lastLogin = document.getElementById("lastLogin");
 const historyList = document.getElementById("historyList");
 const lastUsername = document.getElementById("lastUsername");
-const credentialSelect = document.getElementById("credentialSelect");
+const usernameSelect = document.getElementById("usernameSelect");
 const clearActivityBtn = document.getElementById("clearActivityBtn");
-
-let allUsernames = [];
-let allPasswords = [];
 
 // Load and set the extension's enabled state from storage
 if (toggleSwitch && statusText) {
@@ -46,48 +43,29 @@ if (toggleSwitch) {
   });
 }
 
-// Populate credentialSelect dropdown
-function populateCredentialSelect() {
-  if (!credentialSelect) return;
-  credentialSelect.innerHTML = "";
-  // Add 'Random' option
-  const randomOption = document.createElement("option");
-  randomOption.value = "random";
-  randomOption.textContent = "Random";
-  credentialSelect.appendChild(randomOption);
-  allUsernames.forEach((username, idx) => {
-    const option = document.createElement("option");
-    option.value = idx;
-    option.textContent = username;
-    credentialSelect.appendChild(option);
+// Populate username dropdown
+function populateUsernameDropdown() {
+  if (!usernameSelect) return;
+  chrome.storage.local.get(["usernames"], (result) => {
+    const usernames = Array.isArray(result.usernames) ? result.usernames : [];
+    usernameSelect.innerHTML = '<option value="random">Random</option>';
+    usernames.forEach((u, i) => {
+      const opt = document.createElement("option");
+      opt.value = u;
+      opt.textContent = u;
+      usernameSelect.appendChild(opt);
+    });
   });
 }
 
-// Load credentials for dropdown
-function loadCredentialsForDropdown() {
-  chrome.storage.local.get(["usernames", "passwords"], (result) => {
-    allUsernames = Array.isArray(result.usernames) ? result.usernames : [];
-    allPasswords = Array.isArray(result.passwords) ? result.passwords : [];
-    populateCredentialSelect();
-  });
-}
-
-// Check & Login button
+// Modified Check & Login button logic
 if (checkBtn && loginSpinner) {
   checkBtn.addEventListener("click", () => {
     loginSpinner.style.display = "inline-block";
     checkBtn.setAttribute("disabled", "disabled");
-    // Use selected credential
-    let selectedIdx = credentialSelect ? credentialSelect.value : "random";
-    let selectedUsername, selectedPassword;
-    if (selectedIdx !== "random" && allUsernames.length > 0) {
-      const idx = parseInt(selectedIdx);
-      if (!isNaN(idx) && idx >= 0 && idx < allUsernames.length) {
-        selectedUsername = allUsernames[idx];
-        selectedPassword = allPasswords[idx];
-      }
-    }
-    chrome.runtime.sendMessage({ action: "checkInternetConnectivity", username: selectedUsername, password: selectedPassword }, (response) => {
+    // Pass selected username to background
+    const selectedUsername = usernameSelect ? usernameSelect.value : "random";
+    chrome.runtime.sendMessage({ action: "checkInternetConnectivity", username: selectedUsername }, (response) => {
       loginSpinner.style.display = "none";
       checkBtn.removeAttribute("disabled");
       if (response && response.success) {
@@ -105,16 +83,6 @@ const openSettingsBtn = document.getElementById("openSettings");
 if (openSettingsBtn) {
   openSettingsBtn.addEventListener("click", () => {
     chrome.runtime.openOptionsPage();
-  });
-}
-
-// Clear Activity button
-if (clearActivityBtn) {
-  clearActivityBtn.addEventListener("click", () => {
-    chrome.storage.local.set({ history: [] }, () => {
-      updateHistory([]);
-      showStatusMessage("Activity cleared.", "success");
-    });
   });
 }
 
@@ -156,21 +124,32 @@ function updateHistory(history = []) {
   });
 }
 
+// Clear Activity button
+if (clearActivityBtn) {
+  clearActivityBtn.addEventListener("click", () => {
+    chrome.storage.local.set({ history: [] }, () => {
+      updateHistory([]);
+      showStatusMessage("Activity cleared", "success");
+    });
+  });
+}
+
 // Initial load: get stats and connection
 function loadPopupData() {
   updateConnectionStatus();
   updateStats();
   updateHistory();
+  populateUsernameDropdown();
   chrome.runtime.sendMessage({ action: "getPopupData" }, (response) => {
     if (response) {
       updateConnectionStatus(response.connectionStatus);
       updateStats(response.stats);
       updateHistory(response.history);
+      populateUsernameDropdown();
     } else {
       showStatusMessage("Failed to load popup data.", "error");
     }
   });
-  loadCredentialsForDropdown();
 }
 
 loadPopupData();

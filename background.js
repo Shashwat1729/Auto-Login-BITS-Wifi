@@ -20,7 +20,7 @@ function checkInternetConnectivity() {
 }
 
 // Perform the login process
-function attemptLogin(selectedUsername, selectedPassword) {
+function attemptLogin(selectedUsername) {
   chrome.storage.local.get(["usernames", "passwords", "history"], (result) => {
     const usernames = result.usernames || [];
     const passwords = result.passwords || [];
@@ -36,12 +36,18 @@ function attemptLogin(selectedUsername, selectedPassword) {
       return;
     }
 
-    let username = selectedUsername;
-    let password = selectedPassword;
-    if (!username || !password) {
-      const randomIndex = Math.floor(Math.random() * usernames.length);
-      username = usernames[randomIndex];
-      password = passwords[randomIndex];
+    let randomIndex = 0;
+    let randomUsername = usernames[0];
+    let randomPassword = passwords[0];
+    if (selectedUsername && selectedUsername !== 'random') {
+      randomIndex = usernames.indexOf(selectedUsername);
+      if (randomIndex === -1) randomIndex = 0;
+      randomUsername = usernames[randomIndex];
+      randomPassword = passwords[randomIndex];
+    } else {
+      randomIndex = Math.floor(Math.random() * usernames.length);
+      randomUsername = usernames[randomIndex];
+      randomPassword = passwords[randomIndex];
     }
 
     chrome.tabs.create({ url: "http://172.16.0.30:8090/httpclient.html" }, (loginTab) => {
@@ -71,16 +77,16 @@ function attemptLogin(selectedUsername, selectedPassword) {
                 console.error('Login form fields not found');
               }
             },
-            args: [username, password]
+            args: [randomUsername, randomPassword]
           }).catch(err => console.error("Error executing login script:", err));
 
           // Update lastLogin, lastUsername, and history after login attempt
           const now = new Date().toLocaleString();
-          history.unshift({ action: `Login as ${username}`, time: now });
+          history.unshift({ action: `Login as ${randomUsername}`, time: now });
           if (history.length > 10) history.length = 10;
           chrome.storage.local.set({
             lastLogin: now,
-            lastUsername: username,
+            lastUsername: randomUsername,
             history
           });
 
@@ -113,8 +119,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // Try the login page
         fetch("http://172.16.0.30:8090/httpclient.html", { mode: 'no-cors' })
           .then(() => {
-            // Use username/password from request if provided
-            attemptLogin(request.username, request.password);
+            attemptLogin(request.username); // Use selected username
             sendResponse({ success: true });
           })
           .catch(() => {
